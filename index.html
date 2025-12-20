@@ -587,17 +587,21 @@
       // Construir mensaje para WhatsApp
       const itemsTexto = datos.items.map(item => 
         `${item.cantidad}x ${item.nombre} - L.${(item.precio * item.cantidad).toFixed(2)}`
-      ).join('%0A');
+      ).join('\n');
 
-      const mensajeComercio = `🛵 *NUEVO PEDIDO SOMAR EXPRESS*%0A%0A` +
-        `*Pedido #${result.idPedido}*%0A` +
-        `*Comercio:* ${datos.comercio}%0A%0A` +
-        `*PRODUCTOS:*%0A${itemsTexto}%0A%0A` +
-        `*TOTAL: L.${datos.total.toFixed(2)}*%0A%0A` +
-        `*DATOS DEL CLIENTE:*%0A` +
-        `📱 ${datos.celular}%0A` +
-        `📍 ${datos.direccion}%0A` +
+      const mensaje = 
+        `🛵 *NUEVO PEDIDO SOMAR EXPRESS*\n\n` +
+        `*Pedido #${result.idPedido}*\n` +
+        `*Comercio:* ${datos.comercio}\n\n` +
+        `*PRODUCTOS:*\n${itemsTexto}\n\n` +
+        `*TOTAL: L.${datos.total.toFixed(2)}*\n\n` +
+        `*DATOS DEL CLIENTE:*\n` +
+        `📱 ${datos.celular}\n` +
+        `📍 ${datos.direccion}\n` +
         `🗺️ GPS: ${datos.ubicacionGPS}`;
+
+      // Codificar el mensaje para URL
+      const mensajeCodificado = encodeURIComponent(mensaje);
 
       // Limpiar el número de WhatsApp
       let whatsappNumber = datos.whatsappComercio || '';
@@ -619,7 +623,7 @@
       }
 
       // Abrir WhatsApp
-      const whatsappURL = `https://wa.me/${whatsappNumber}?text=${mensajeComercio}`;
+      const whatsappURL = `https://wa.me/${whatsappNumber}?text=${mensajeCodificado}`;
       window.open(whatsappURL, '_blank');
 
       // Limpiar carrito y cerrar modal
