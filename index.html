@@ -154,6 +154,9 @@
   </div>
 
   <script>
+    // URL de Google Apps Script
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzmnCMSGJOo5cjFB424vQ-6jNRRBQKWS3wVJlw4U-f3e_7utcXCgWf3zdrEtEFKPhL-g/exec';
+    
     // Estado de la aplicación
     let appData = {
       comercios: [],
@@ -168,27 +171,21 @@
     // Cargar datos al iniciar
     window.addEventListener('DOMContentLoaded', async () => {
       try {
-        // Si estás en GitHub Pages, usa la API de Google Apps Script
-        const scriptURL = 'TU_URL_DE_GOOGLE_APPS_SCRIPT_AQUI';
-        
-        // Para desarrollo local o si estás en el entorno de Google Apps Script
-        if (typeof google !== 'undefined' && google.script) {
-          google.script.run
-            .withSuccessHandler(loadApp)
-            .withFailureHandler(err => {
-              console.error('Error:', err);
-              alert('Error al cargar datos');
-            })
-            .getData();
-        } else {
-          // Para GitHub Pages
-          const response = await fetch(https://script.google.com/macros/s/AKfycbxzmnCMSGJOo5cjFB424vQ-6jNRRBQKWS3wVJlw4U-f3e_7utcXCgWf3zdrEtEFKPhL-g/exec);
-          const data = await response.json();
-          loadApp(data);
-        }
+        // Para GitHub Pages o acceso directo
+        const response = await fetch(SCRIPT_URL + '?action=getData');
+        const data = await response.json();
+        loadApp(data);
       } catch (error) {
         console.error('Error:', error);
-        alert('Error al conectar con el servidor');
+        document.getElementById('loading').innerHTML = `
+          <div class="text-center">
+            <p class="text-red-500 font-bold mb-2">Error al cargar datos</p>
+            <p class="text-gray-600">${error.message}</p>
+            <button onclick="location.reload()" class="mt-4 bg-brand-orange text-white px-6 py-2 rounded-lg">
+              Reintentar
+            </button>
+          </div>
+        `;
       }
     });
 
@@ -497,23 +494,36 @@
         whatsappComercio: appData.currentComercio.WHATSAPP
       };
 
-      // Registrar pedido
+      // Mostrar loading
+      const submitBtn = document.querySelector('#checkoutForm button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = 'Procesando...';
+      submitBtn.disabled = true;
+
       try {
-        if (typeof google !== 'undefined' && google.script) {
-          google.script.run
-            .withSuccessHandler((result) => finalizarPedido(result, datos))
-            .withFailureHandler((err) => {
-              console.error('Error:', err);
-              alert('Error al registrar pedido');
-            })
-            .registrarPedido(datos);
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'registrarPedido',
+            datos: datos
+          })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          finalizarPedido(result, datos);
         } else {
-          // Para GitHub Pages - simular registro exitoso
-          finalizarPedido({success: true, idPedido: Math.floor(Math.random() * 10000)}, datos);
+          throw new Error(result.error || 'Error desconocido');
         }
       } catch (error) {
         console.error('Error:', error);
-        alert('Error al procesar pedido');
+        alert('Error al procesar pedido: ' + error.message);
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
       }
     }
 
