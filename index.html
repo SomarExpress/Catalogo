@@ -287,8 +287,28 @@
     }
 
     function renderProductos() {
-      const productos = appData.productos.filter(p => p.COMERCIO === appData.currentComercio.COMERCIO);
+      // Filtrar productos por ID del comercio en lugar del nombre
+      const productos = appData.productos.filter(p => p.COMERCIO == appData.currentComercio.ID);
       const list = document.getElementById('productosList');
+
+      // Debug: Mostrar información en consola
+      console.log('Comercio ID:', appData.currentComercio.ID);
+      console.log('Comercio nombre:', appData.currentComercio.COMERCIO);
+      console.log('Total productos en BD:', appData.productos.length);
+      console.log('Productos filtrados:', productos.length);
+      console.log('IDs de comercios en productos:', [...new Set(appData.productos.map(p => p.COMERCIO))]);
+
+      if (productos.length === 0) {
+        list.innerHTML = `
+          <div class="col-span-full bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+            <p class="text-lg font-semibold text-yellow-800 mb-2">⚠️ Este comercio no tiene productos registrados</p>
+            <p class="text-sm text-yellow-700">ID del comercio: <strong>${appData.currentComercio.ID}</strong></p>
+            <p class="text-sm text-yellow-700">Nombre: <strong>${appData.currentComercio.COMERCIO}</strong></p>
+            <p class="text-xs text-yellow-600 mt-2">Verifica que en la pestaña PRODUCTOS existan productos con este ID de comercio</p>
+          </div>
+        `;
+        return;
+      }
 
       list.innerHTML = productos.map(p => `
         <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
@@ -315,11 +335,22 @@
     }
 
     function addToCart(producto) {
-      const existing = appData.cart.find(item => item.NOMBRE === producto.NOMBRE && item.COMERCIO === producto.COMERCIO);
+      // Agregar el nombre del comercio al producto usando el ID
+      const comercio = appData.comercios.find(c => c.ID == producto.COMERCIO);
+      const productoConNombre = {
+        ...producto,
+        NOMBRE_COMERCIO: comercio ? comercio.COMERCIO : 'Desconocido'
+      };
+      
+      const existing = appData.cart.find(item => 
+        item.NOMBRE === producto.NOMBRE && 
+        item.COMERCIO === producto.COMERCIO
+      );
+      
       if (existing) {
         existing.cantidad++;
       } else {
-        appData.cart.push({...producto, cantidad: 1});
+        appData.cart.push({...productoConNombre, cantidad: 1});
       }
       updateCartUI();
     }
@@ -457,7 +488,8 @@
         addToCart({
           NOMBRE: nombre,
           PRECIO: precio,
-          COMERCIO: appData.currentComercio.COMERCIO,
+          COMERCIO: appData.currentComercio.ID,
+          NOMBRE_COMERCIO: appData.currentComercio.COMERCIO,
           DESCRIPCION: 'Producto personalizado',
           IMAGEN: ''
         });
